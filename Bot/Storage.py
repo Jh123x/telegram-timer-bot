@@ -19,8 +19,12 @@ class Storage(object):
         self.storage[chat_id][event_name] = deadline
         return deadline
 
-    def get_events(self, chat_id: int) -> dict:
-        return self.storage[chat_id]
+    def get_events(self, chat_id: int, event_name) -> Optional[datetime.datetime]:
+        return self.storage.get(chat_id, {}).get(event_name, None)
 
-    def delete_event(self, chat_id: int, event_name: str):
-        del self.storage[chat_id][event_name]
+    def delete_event(self, chat_id: int, event_name: str) -> bool:
+        try:
+            del self.storage[chat_id][event_name]
+            return True
+        except:
+            return False

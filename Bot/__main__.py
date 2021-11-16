@@ -6,7 +6,7 @@ from time import sleep
 from Storage import Storage
 from dotenv import load_dotenv
 from pyrogram import Client, filters
-from constants import CALLBACK_DICT, ERROR_CMD_MSG, ZERO_TIME_DELTA, TIMER_FORMAT, EVENT_ENDED_FORMAT, POLLING_INTERVAL, TIME_FORMAT
+from constants import CALLBACK_DICT, ERROR_CMD_MSG, ZERO_TIME_DELTA, TIMER_FORMAT, EVENT_ENDED_FORMAT, POLLING_INTERVAL, TIME_FORMAT, CANCEL_MSG, ERROR_CANCEL_MSG, EVENT_CANCELLED_FORMAT
 
 load_dotenv()
 storage = Storage()
@@ -26,6 +26,19 @@ async def start(_, message):
         reply_markup=CALLBACK_DICT['start'].get_markup()
     )
 
+@app.on_message(filters.command('cancel'))
+async def cancel(_, message):
+    try:
+        _, event_name = message.text.split(' ', 1)
+        if not storage.delete_event(message.chat.id, event_name):
+            raise Exception(ERROR_CANCEL_MSG)
+        await message.reply(
+            text=CANCEL_MSG.format(event_name=event_name),
+        )
+    except:
+        await message.reply(
+            text=ERROR_CANCEL_MSG,
+        )
 
 
 @app.on_message(filters.command('timer'))
@@ -61,11 +74,15 @@ async def refresh_msg(msg, deadline: datetime.datetime, event_name: str):
     while True:
         sleep(POLLING_INTERVAL)
         time_left = deadline - datetime.datetime.now()
-        if time_left.total_seconds() < 0:
+        if storage.get_events(msg.chat.id, event_name) is None:
+            format = EVENT_CANCELLED_FORMAT
+            break
+        if time_left.total_seconds() < 0 :
+            format = EVENT_ENDED_FORMAT
             break
         event_string = get_event_string(time_left, event_name)
         await msg.edit(event_string)
-    await msg.edit(EVENT_ENDED_FORMAT.format(event_name=event_name))
+    await msg.edit(format.format(event_name=event_name))
 
 
 def get_event_string(time: datetime.timedelta, event_name: str):
