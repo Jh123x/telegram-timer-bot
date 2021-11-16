@@ -19,12 +19,13 @@ app = Client(
 )
 
 
-@app.on_message(filters.command(['start']) & filters.private)
+@app.on_message(filters.command('start'))
 async def start(_, message):
     await message.reply(
         text=CALLBACK_DICT['start'].get_msg(),
         reply_markup=CALLBACK_DICT['start'].get_markup()
     )
+
 
 
 @app.on_message(filters.command('timer'))

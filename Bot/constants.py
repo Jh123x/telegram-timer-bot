@@ -6,12 +6,12 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 ZERO_TIME_DELTA = datetime.timedelta(0)
-COMMAND_FORMAT = "`/timer {dd/mm/yyyy} {HH:MM} {Event Name}`"
+COMMAND_FORMAT = "`/timer {dd/mm/yyyy} {24hr in (HOUR:MINUTE)} {Event Name}`"
 ##################### Do not change those within this ###################################
 
 
 # Interval to edit the message (Default 30 seconds)
-POLLING_INTERVAL = 30
+POLLING_INTERVAL = 10
 
 # Format for Display
 TIMER_FORMAT = "⏳{time}\n<i>**{event_name}**</i>"
