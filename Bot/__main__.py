@@ -26,6 +26,7 @@ async def start(_, message):
         reply_markup=CALLBACK_DICT['start'].get_markup()
     )
 
+
 @app.on_message(filters.command('cancel'))
 async def cancel(_, message):
     try:
@@ -77,7 +78,7 @@ async def refresh_msg(msg, deadline: datetime.datetime, event_name: str):
         if storage.get_events(msg.chat.id, event_name) is None:
             format = EVENT_CANCELLED_FORMAT
             break
-        if time_left.total_seconds() < 0 :
+        if time_left.total_seconds() < 0:
             format = EVENT_ENDED_FORMAT
             break
         event_string = get_event_string(time_left, event_name)

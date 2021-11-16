@@ -15,7 +15,8 @@ CANCEL_FORMAT = "`/cancel {Event Name}`"
 POLLING_INTERVAL = 10
 
 # Format for Display
-TIMER_FORMAT = "**{event_name}**\n⏳{time}\nThis updates every " + str(POLLING_INTERVAL) + " seconds."
+TIMER_FORMAT = "**{event_name}**\n⏳{time}\nThis updates every " + \
+    str(POLLING_INTERVAL) + " seconds."
 EVENT_ENDED_FORMAT = "{event_name} has already ended :("
 EVENT_CANCELLED_FORMAT = "{event_name} is cancelled :("
 TIME_FORMAT = "{days} Days, {hours} Hours, {minutes} Minutes {seconds} Seconds left"
@@ -26,8 +27,6 @@ HELP_MSG = f'To use the bot just type {COMMAND_FORMAT} and the bot will start to
 ERROR_MSG = 'This function is not implemented yet. Press back to go back.'
 ERROR_CMD_MSG = f'Invalid format, the message is the format: {COMMAND_FORMAT}'
 ERROR_CANCEL_MSG = f'Invalid format, the message is the format: {CANCEL_FORMAT}'
-
-
 
 
 # Menu format (Change this if you know what you are doing)
