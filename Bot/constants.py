@@ -10,8 +10,8 @@ COMMAND_FORMAT = "`/timer {dd/mm/yyyy} {HH:MM} {Event Name}`"
 ##################### Do not change those within this ###################################
 
 
-# Interval to edit the message
-POLLING_INTERVAL = 2
+# Interval to edit the message (Default 30 seconds)
+POLLING_INTERVAL = 30
 
 # Format for Display
 TIMER_FORMAT = "⏳{time}\n<i>**{event_name}**</i>"
