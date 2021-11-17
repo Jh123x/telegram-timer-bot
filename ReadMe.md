@@ -27,13 +27,14 @@ BOT_TOKEN=<Your Bot Token>
 
 
 # Contributing to the Project
+
 Feel free to send in a pull request.
 
 # Using the project
+
 To Use this project, please add this line into your readme.
 ```markdown
-
-
+Referenced from 
 ```
 
 # Tech Stack
