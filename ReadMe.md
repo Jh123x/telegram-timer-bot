@@ -7,7 +7,7 @@ This is a telegram bot that allows the user to have a "live" countdown on the ev
 ## Prerequisites
 
 1. [Python](https://www.python.org/ "Python Official Website")
-   - You have to download `python` from `here` and install it.
+   - You have to download `python` from the installation.
 
 ## Quick start
 
