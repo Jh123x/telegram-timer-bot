@@ -12,7 +12,7 @@ load_dotenv()
 storage = Storage()
 
 app = Client(
-    "Timer Bot",
+    "Live Timer Bot",
     api_id=os.environ.get('API_ID', None),
     api_hash=os.environ.get('API_HASH', None),
     bot_token=os.environ.get("BOT_TOKEN", None),
@@ -100,17 +100,14 @@ def get_time_string(time: datetime.timedelta):
 
 @app.on_callback_query()
 async def callback(_, query):
-    msgpack = CALLBACK_DICT.get(query.data,)
+    msgpack = CALLBACK_DICT.get(query.data, CALLBACK_DICT['default'])
 
     # Get the message
     text = msgpack.get_msg()
     markup = msgpack.get_markup()
 
     # Update the message
-    await query.edit_message_text(
-        text,
-        reply_markup=markup
-    )
+    await query.edit_message_text(text, reply_markup=markup)
 
 if __name__ == "__main__":
     app.run()

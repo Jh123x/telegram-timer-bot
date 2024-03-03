@@ -4,11 +4,11 @@ from typing import Optional
 
 class Storage(object):
     def __init__(self):
-        """Stores the infromation for each user"""
+        """Stores the information for each user"""
         # Load the shelve db if possible
         self.storage = {}
 
-    def add_event(self, chat_id: int, event_name: str, event_time: str) -> Optional[datetime.datetime]:
+    def add_event(self, chat_id: int, event_name: str, event_time: str) -> datetime.datetime:
         """
         Throws ValueError when the format is incorrect
         """
