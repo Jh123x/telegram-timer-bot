@@ -18,7 +18,7 @@ This is a telegram bot that allows the user to have a "live" countdown on the ev
 
 ## Creating your `.env` file
 
-```
+```env
 API_ID=<Your API ID>
 API_HASH=<Your API Hash>
 BOT_TOKEN=<Your Bot Token>
@@ -41,7 +41,7 @@ Feel free to send in a pull request.
 To Use this project, please add this line into your readme.
 
 ```markdown
-Referenced from [Jh123x Timer bot](https://github.com/Jh123x/telegram-timer-bot)
+Referenced from [Jh123x Timer bot](https://jh123x.com/blog/2023/a-live-countdown-telegram-bot/)
 ```
 
 ## Tech Stack
