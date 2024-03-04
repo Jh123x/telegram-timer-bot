@@ -1,0 +1,19 @@
+on:
+  push:
+    branches:
+      - main
+name: Handle Windows Release
+jobs:
+  generate:
+    name: Create release-artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: PyInstaller Windows
+        uses: JackMcKew/pyinstaller-action-windows@main
+        with:
+          path: Bot
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: name-of-artifact
+          path: Bot/dist/windows
