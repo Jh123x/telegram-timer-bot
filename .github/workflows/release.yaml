@@ -7,16 +7,13 @@ jobs:
   generate:
     name: Create release-artifacts
     runs-on: ubuntu-latest
-    defaults:
-        run:
-            working-directory: ./Bot
     steps:
       - name: PyInstaller Windows
         uses: JackMcKew/pyinstaller-action-windows@main
         with:
-          path: .
+          path: Bot
 
       - uses: actions/upload-artifact@v2
         with:
           name: name-of-artifact
-          path: ./dist/windows
+          path: Bot/dist/windows
