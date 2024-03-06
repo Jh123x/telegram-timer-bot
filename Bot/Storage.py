@@ -2,8 +2,8 @@ import datetime
 from typing import Optional
 
 
-class Storage(object):
-    def __init__(self):
+class Storage:
+    def __init__(self) -> None:
         """Stores the information for each user"""
         # Load the shelve db if possible
         self.storage = {}

@@ -1,33 +1,37 @@
 import os
 import datetime
+import logging
 
 from time import sleep
 from Storage import Storage
 from dotenv import load_dotenv
 from pyrogram import filters
 from pyrogram.client import Client
-from constants import CALLBACK_DICT, ERROR_CMD_MSG, ZERO_TIME_DELTA, TIMER_FORMAT, EVENT_ENDED_FORMAT, POLLING_INTERVAL, TIME_FORMAT, CANCEL_MSG, ERROR_CANCEL_MSG, EVENT_CANCELLED_FORMAT
+from constants import CALLBACK_DICT, ERROR_CMD_MSG, ZERO_TIME_DELTA, TIMER_FORMAT, EVENT_ENDED_FORMAT, POLLING_INTERVAL, TIME_FORMAT, CANCEL_MSG, ERROR_CANCEL_MSG, EVENT_CANCELLED_FORMAT, CMD_START, CMD_DEFAULT, CMD_CANCEL, CMD_TIMER, BOT_NAME, LOGGER_FORMAT
 
 load_dotenv()
 storage = Storage()
 
 app = Client(
-    "Live Timer Bot",
+    BOT_NAME,
     api_id=os.environ.get('API_ID', ""),
     api_hash=os.environ.get('API_HASH', ""),
     bot_token=os.environ.get("BOT_TOKEN", ""),
 )
 
+logging.basicConfig(format=LOGGER_FORMAT)
+logger = logging.getLogger(__name__)
 
-@app.on_message(filters.command('start'))
+
+@app.on_message(filters.command(CMD_START))
 async def start(_, message):
     await message.reply(
-        text=CALLBACK_DICT['start'].get_msg(),
-        reply_markup=CALLBACK_DICT['start'].get_markup()
+        text=CALLBACK_DICT[CMD_START].get_msg(),
+        reply_markup=CALLBACK_DICT[CMD_START].get_markup()
     )
 
 
-@app.on_message(filters.command('cancel'))
+@app.on_message(filters.command(CMD_CANCEL))
 async def cancel(_, message):
     try:
         _, event_name = message.text.split(' ', 1)
@@ -42,7 +46,7 @@ async def cancel(_, message):
         )
 
 
-@app.on_message(filters.command('timer'))
+@app.on_message(filters.command(CMD_TIMER))
 async def start_timer(_, message):
     """The main method for the timer message"""
     try:
@@ -50,6 +54,7 @@ async def start_timer(_, message):
         _, date, time, event_name = message.text.split(' ', 3)
         deadline = storage.add_event(
             message.chat.id, event_name, f"{date} {time}")
+        logger.info(f"Event {event_name} added for {deadline}")
 
         time_left: datetime.timedelta = deadline - datetime.datetime.now()
         if time_left < ZERO_TIME_DELTA:
@@ -64,10 +69,7 @@ async def start_timer(_, message):
         await refresh_msg(msg, deadline, event_name)
 
     except (ValueError, TypeError):
-        await message.reply(
-            text=ERROR_CMD_MSG
-        )
-        return
+        await message.reply(text=ERROR_CMD_MSG)
 
 
 async def refresh_msg(msg, deadline: datetime.datetime, event_name: str):
@@ -77,12 +79,15 @@ async def refresh_msg(msg, deadline: datetime.datetime, event_name: str):
         time_left = deadline - datetime.datetime.now()
         if storage.get_events(msg.chat.id, event_name) is None:
             format = EVENT_CANCELLED_FORMAT
+            logger.info(f"Event {event_name} was cancelled")
             break
         if time_left.total_seconds() < 0:
             format = EVENT_ENDED_FORMAT
+            logger.info(f"Event {event_name} has ended")
             break
         event_string = get_event_string(time_left, event_name)
         await msg.edit(event_string)
+        logger.info(f"Event {event_name} updated for {time_left}")
     await msg.edit(format.format(event_name=event_name))
 
 
@@ -100,7 +105,7 @@ def get_time_string(time: datetime.timedelta):
 
 @app.on_callback_query()
 async def callback(_, query) -> None:
-    msgpack = CALLBACK_DICT.get(query.data, CALLBACK_DICT['default'])
+    msgpack = CALLBACK_DICT.get(query.data, CALLBACK_DICT[CMD_DEFAULT])
 
     # Get the message
     text = msgpack.get_msg()
@@ -108,6 +113,8 @@ async def callback(_, query) -> None:
 
     # Update the message
     await query.edit_message_text(text, reply_markup=markup)
+    logger.info(f"Callback {query.data} is called")
 
 if __name__ == "__main__":
+    logger.info("Starting the bot")
     app.run()
