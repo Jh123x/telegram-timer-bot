@@ -4,7 +4,8 @@ import datetime
 from time import sleep
 from Storage import Storage
 from dotenv import load_dotenv
-from pyrogram import Client, filters
+from pyrogram import filters
+from pyrogram.client import Client
 from constants import CALLBACK_DICT, ERROR_CMD_MSG, ZERO_TIME_DELTA, TIMER_FORMAT, EVENT_ENDED_FORMAT, POLLING_INTERVAL, TIME_FORMAT, CANCEL_MSG, ERROR_CANCEL_MSG, EVENT_CANCELLED_FORMAT
 
 load_dotenv()
@@ -98,7 +99,7 @@ def get_time_string(time: datetime.timedelta):
 
 
 @app.on_callback_query()
-async def callback(_, query):
+async def callback(_, query) -> None:
     msgpack = CALLBACK_DICT.get(query.data, CALLBACK_DICT['default'])
 
     # Get the message
