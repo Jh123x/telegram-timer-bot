@@ -5,29 +5,29 @@ on:
 name: Handle Windows Release
 jobs:
   generate_windows:
-    name: Create release-artifacts
+    name: Create windows release-artifacts
     runs-on: ubuntu-latest
     steps:
       - name: PyInstaller Windows
         uses: JackMcKew/pyinstaller-action-windows@main
         with:
-          path: Bot
+          path: .
 
       - uses: actions/upload-artifact@v2
         with:
           name: name-of-artifact
-          path: Bot/dist/windows
+          path: dist/windows
 
   generate_linux:
-    name: Create release-artifacts
+    name: Create linux release-artifacts
     runs-on: ubuntu-latest
     steps:
       - name: PyInstaller Linux
         uses: JackMcKew/pyinstaller-action-linux@0.1.4
         with:
-          path: Bot
+          path: .
 
       - uses: actions/upload-artifact@v2
         with:
           name: name-of-artifact
-          path: Bot/dist/linux
+          path: dist/linux
