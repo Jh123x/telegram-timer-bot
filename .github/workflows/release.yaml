@@ -11,9 +11,9 @@ jobs:
       - name: PyInstaller Windows
         uses: JackMcKew/pyinstaller-action-windows@main
         with:
-          path: ./Bot
+          path: Bot
 
       - uses: actions/upload-artifact@v2
         with:
           name: name-of-artifact
-          path: ./Bot/dist/windows
+          path: Bot/dist/windows
