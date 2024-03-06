@@ -26,6 +26,7 @@ BOT_TOKEN=<Your Bot Token>
 
 1. Copy the template above (Note that there is no space between the `=` and the id itself)
 2. Get your `API_ID` and `API_HASH` [here](https://my.telegram.org/apps/create)
+   - Replace the `API_ID` and `API_HASH` (including the `<` and `>`) with the ones you got from the link above
 3. Get your `BOT_TOKEN` from `@botfather` [here](https://core.telegram.org/bots)
 
 ## Note:

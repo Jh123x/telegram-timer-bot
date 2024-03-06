@@ -1,6 +1,5 @@
 import os
 import datetime
-import multiprocessing as mp
 
 from time import sleep
 from Storage import Storage
@@ -13,9 +12,9 @@ storage = Storage()
 
 app = Client(
     "Live Timer Bot",
-    api_id=os.environ.get('API_ID', None),
-    api_hash=os.environ.get('API_HASH', None),
-    bot_token=os.environ.get("BOT_TOKEN", None),
+    api_id=os.environ.get('API_ID', ""),
+    api_hash=os.environ.get('API_HASH', ""),
+    bot_token=os.environ.get("BOT_TOKEN", ""),
 )
 
 
