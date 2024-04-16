@@ -19,17 +19,20 @@ CMD_TIMER = 'timer'
 CMD_CANCEL = 'cancel'
 
 # Logger Format
-LOGGER_FORMAT = '%(asctime)s %(clientip)-15s %(user)-8s %(message)s'
+# LOGGER_FORMAT = '%(asctime)s %(clientip)-15s %(user)-8s %(message)s'
 
 # Interval to edit the message (Default 30 seconds)
-POLLING_INTERVAL = 10
+POLLING_INTERVAL = 1
+FOOTER = "My developer is the greatest"
 
 # Format for Display
-TIMER_FORMAT = "**{event_name}**\n⏳{time}\nThis updates every " + \
-    str(POLLING_INTERVAL) + " seconds."
-EVENT_ENDED_FORMAT = "{event_name} has already ended :("
+# TIMER_FORMAT = "**{event_name}**\n⏳{time}\nThis updates every " + \
+#     str(POLLING_INTERVAL) + " seconds."
+TIMER_FORMAT = "**{event_name}**\n\n⏳{time}\n\n__{footer}__"
+
+EVENT_ENDED_FORMAT = "{event_name} has already ended!"
 EVENT_CANCELLED_FORMAT = "{event_name} is cancelled :("
-TIME_FORMAT = "{days} Days, {hours} Hours, {minutes} Minutes {seconds} Seconds left"
+# TIME_FORMAT = "{days} Days, {hours} Hours, {minutes} Minutes {seconds} Seconds left"
 
 START_MSG = f'Welcome to the {BOT_NAME} bot, feel free to look around'
 CANCEL_MSG = "{event_name} is cancelled."

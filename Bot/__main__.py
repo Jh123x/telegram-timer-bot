@@ -1,16 +1,18 @@
 import os
 import datetime
-import logging
 
 from time import sleep
 from Storage import Storage
+from Logger import setlogger
 from dotenv import load_dotenv
 from pyrogram import filters
+from pyrogram.types import Message
 from pyrogram.client import Client
-from constants import CALLBACK_DICT, ERROR_CMD_MSG, ZERO_TIME_DELTA, TIMER_FORMAT, EVENT_ENDED_FORMAT, POLLING_INTERVAL, TIME_FORMAT, CANCEL_MSG, ERROR_CANCEL_MSG, EVENT_CANCELLED_FORMAT, CMD_START, CMD_DEFAULT, CMD_CANCEL, CMD_TIMER, BOT_NAME, LOGGER_FORMAT
+from constants import CALLBACK_DICT, ERROR_CMD_MSG, ZERO_TIME_DELTA, TIMER_FORMAT, EVENT_ENDED_FORMAT, POLLING_INTERVAL, CANCEL_MSG, ERROR_CANCEL_MSG, EVENT_CANCELLED_FORMAT, CMD_START, CMD_DEFAULT, CMD_CANCEL, CMD_TIMER, BOT_NAME, FOOTER
 
 load_dotenv()
-storage = Storage()
+logger = setlogger(BOT_NAME)
+storage = Storage(logger)
 
 app = Client(
     BOT_NAME,
@@ -19,12 +21,8 @@ app = Client(
     bot_token=os.environ.get("BOT_TOKEN", ""),
 )
 
-logging.basicConfig(format=LOGGER_FORMAT)
-logger = logging.getLogger(__name__)
-
-
 @app.on_message(filters.command(CMD_START))
-async def start(_, message):
+async def start(_, message: Message):
     await message.reply(
         text=CALLBACK_DICT[CMD_START].get_msg(),
         reply_markup=CALLBACK_DICT[CMD_START].get_markup()
@@ -32,7 +30,7 @@ async def start(_, message):
 
 
 @app.on_message(filters.command(CMD_CANCEL))
-async def cancel(_, message):
+async def cancel(_, message: Message):
     try:
         _, event_name = message.text.split(' ', 1)
         if not storage.delete_event(message.chat.id, event_name):
@@ -47,7 +45,7 @@ async def cancel(_, message):
 
 
 @app.on_message(filters.command(CMD_TIMER))
-async def start_timer(_, message):
+async def start_timer(_, message: Message):
     """The main method for the timer message"""
     try:
         # [command, date, time, event_name]
@@ -68,15 +66,18 @@ async def start_timer(_, message):
 
         await refresh_msg(msg, deadline, event_name)
 
-    except (ValueError, TypeError):
+    except (ValueError, TypeError) as e:
+        logger.error(str(e))
         await message.reply(text=ERROR_CMD_MSG)
 
 
-async def refresh_msg(msg, deadline: datetime.datetime, event_name: str):
+async def refresh_msg(msg: Message, deadline: datetime.datetime, event_name: str):
     """Updates the event message until it is pass the deadline"""
+    sleep_time = max(POLLING_INTERVAL, 5)
     while True:
-        sleep(POLLING_INTERVAL)
+        sleep(sleep_time)
         time_left = deadline - datetime.datetime.now()
+        if not time_left.days and time_left.seconds < 10: sleep_time = 1
         if storage.get_events(msg.chat.id, event_name) is None:
             format = EVENT_CANCELLED_FORMAT
             logger.info(f"Event {event_name} was cancelled")
@@ -87,21 +88,24 @@ async def refresh_msg(msg, deadline: datetime.datetime, event_name: str):
             break
         event_string = get_event_string(time_left, event_name)
         await msg.edit(event_string)
-        logger.info(f"Event {event_name} updated for {time_left}")
+        # logger.info(f"Event {event_name} updated for {time_left}")
     await msg.edit(format.format(event_name=event_name))
 
 
 def get_event_string(time: datetime.timedelta, event_name: str):
     """Get the string format for event message"""
-    return TIMER_FORMAT.format(time=get_time_string(time), event_name=event_name)
+    return TIMER_FORMAT.format(time=get_time_string(time), event_name=event_name, footer = FOOTER)
 
 
 def get_time_string(time: datetime.timedelta):
-    hours = time.seconds // 3600
-    minutes = (time.seconds % 3600) // 60
-    seconds = time.seconds % 60
-    return TIME_FORMAT.format(days=time.days, hours=hours, minutes=minutes, seconds=seconds)
-
+    time_string = ""
+    if time.days: time_string += f"{time.days}**d** "
+    minutes, seconds = divmod(time.seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours: time_string += f"{hours}**h** {minutes}**m** {seconds}**s**"
+    elif minutes: time_string += f"{minutes}**m** {seconds}**s**"
+    else: time_string += f"{seconds}**s**"
+    return time_string
 
 @app.on_callback_query()
 async def callback(_, query) -> None:
