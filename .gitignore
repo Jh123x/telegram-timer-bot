@@ -116,3 +116,5 @@ dmypy.json
 # Logs
 *.session
 *.session-journal
+logs
+database
