@@ -2,11 +2,11 @@ import os
 import datetime
 import logging
 from time import sleep
-from Storage import Storage
+from storage import Storage
 from dotenv import load_dotenv
 from pyrogram import filters
 from pyrogram.client import Client
-from pyrogram.types import Message, Query
+from pyrogram.types import Message, CallbackQuery
 
 from constants import CALLBACK_DICT, ERROR_CMD_MSG, ZERO_TIME_DELTA, TIMER_FORMAT, EVENT_ENDED_FORMAT, POLLING_INTERVAL, TIME_FORMAT, CANCEL_MSG, ERROR_CANCEL_MSG, EVENT_CANCELLED_FORMAT, CMD_START, CMD_DEFAULT, CMD_CANCEL, CMD_TIMER, BOT_NAME, LOGGER_FORMAT
 
@@ -112,7 +112,7 @@ def get_time_string(time: datetime.timedelta) -> str:
 
 
 @app.on_callback_query()
-async def callback(_, query: Query) -> None:
+async def callback(_, query: CallbackQuery) -> None:
     msgpack = CALLBACK_DICT.get(query.data, CALLBACK_DICT[CMD_DEFAULT])
 
     # Get the message

@@ -1,7 +1,7 @@
 
 ##################### Do not change those within this ###################################
 import datetime
-from MsgPack import MsgPack
+from msg_pack import MsgPack
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from typing import Dict
 
