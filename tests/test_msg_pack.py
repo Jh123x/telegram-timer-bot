@@ -1,6 +1,6 @@
 import unittest
-from Bot.msg_pack import MsgPack
-from Bot.constants import HELP
+from bot.msg_pack import MsgPack
+from bot.constants import HELP
 
 
 class TestMsgPack(unittest.TestCase):

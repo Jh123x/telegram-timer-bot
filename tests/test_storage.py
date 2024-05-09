@@ -1,7 +1,7 @@
 import unittest
 from typing import Dict, Tuple
 from datetime import datetime
-from Bot.storage import Storage
+from bot.storage import Storage
 
 
 class TestStorage(unittest.TestCase):

@@ -1,6 +1,6 @@
 # Do not change those within this
 import datetime
-from msg_pack import MsgPack
+from .msg_pack import MsgPack
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from typing import Dict
 

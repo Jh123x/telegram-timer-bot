@@ -2,13 +2,13 @@ import os
 import datetime
 import logging
 from time import sleep
-from storage import Storage
 from dotenv import load_dotenv
 from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message, CallbackQuery
 
-from constants import (
+from bot.storage import Storage
+from bot.constants import (
     CALLBACK_DICT, ERROR_CMD_MSG, ZERO_TIME_DELTA, TIMER_FORMAT,
     EVENT_ENDED_FORMAT, POLLING_INTERVAL, TIME_FORMAT, CANCEL_MSG,
     ERROR_CANCEL_MSG, EVENT_CANCELLED_FORMAT, CMD_START, CMD_DEFAULT,
