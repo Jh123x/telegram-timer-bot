@@ -3,6 +3,7 @@
 import datetime
 from MsgPack import MsgPack
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from typing import Dict
 
 
 ZERO_TIME_DELTA = datetime.timedelta(0)
@@ -22,7 +23,7 @@ CMD_CANCEL = 'cancel'
 LOGGER_FORMAT = '%(asctime)s %(clientip)-15s %(user)-8s %(message)s'
 
 # Interval to edit the message (Default 30 seconds)
-POLLING_INTERVAL = 10
+POLLING_INTERVAL = 30
 
 # Format for Display
 TIMER_FORMAT = "**{event_name}**\n⏳{time}\nThis updates every " + \
@@ -68,7 +69,7 @@ ERROR = InlineKeyboardMarkup(
     ]
 )
 
-CALLBACK_DICT = {
+CALLBACK_DICT: Dict[str, MsgPack] = {
     CMD_START: MsgPack(START_MSG, START),
     CMD_HELP: MsgPack(HELP_MSG, HELP),
     CMD_DEFAULT: MsgPack(ERROR_MSG, ERROR),

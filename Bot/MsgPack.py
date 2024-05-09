@@ -1,13 +1,13 @@
 from pyrogram.types import InlineKeyboardMarkup
 
 
-class MsgPack(object):
-    def __init__(self, text: str, markup: InlineKeyboardMarkup):
+class MsgPack:
+    def __init__(self: 'MsgPack', text: str, markup: InlineKeyboardMarkup) -> None:
         self.msg = text
         self.markup = markup
 
-    def get_msg(self):
+    def get_msg(self: 'MsgPack') -> str:
         return self.msg
 
-    def get_markup(self):
+    def get_markup(self: 'MsgPack') -> InlineKeyboardMarkup:
         return self.markup
