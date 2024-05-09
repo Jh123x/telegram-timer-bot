@@ -8,7 +8,12 @@ from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message, CallbackQuery
 
-from constants import CALLBACK_DICT, ERROR_CMD_MSG, ZERO_TIME_DELTA, TIMER_FORMAT, EVENT_ENDED_FORMAT, POLLING_INTERVAL, TIME_FORMAT, CANCEL_MSG, ERROR_CANCEL_MSG, EVENT_CANCELLED_FORMAT, CMD_START, CMD_DEFAULT, CMD_CANCEL, CMD_TIMER, BOT_NAME, LOGGER_FORMAT
+from constants import (
+    CALLBACK_DICT, ERROR_CMD_MSG, ZERO_TIME_DELTA, TIMER_FORMAT,
+    EVENT_ENDED_FORMAT, POLLING_INTERVAL, TIME_FORMAT, CANCEL_MSG,
+    ERROR_CANCEL_MSG, EVENT_CANCELLED_FORMAT, CMD_START, CMD_DEFAULT,
+    CMD_CANCEL, CMD_TIMER, BOT_NAME, LOGGER_FORMAT,
+)
 
 load_dotenv()
 storage = Storage()
@@ -39,11 +44,11 @@ async def cancel(_, message: Message) -> None:
     try:
         _, event_name = message.text.split(' ', 1)
         if not storage.delete_event(message.chat.id, event_name):
-            raise Exception(ERROR_CANCEL_MSG)
+            raise ValueError(ERROR_CANCEL_MSG)
         await message.reply(
             text=CANCEL_MSG.format(event_name=event_name),
         )
-    except:
+    except ValueError:
         await message.reply(
             text=ERROR_CANCEL_MSG,
         )
