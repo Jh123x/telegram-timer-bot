@@ -36,6 +36,7 @@ BOT_TOKEN=<Your Bot Token>
 ## Contributing to the Project
 
 Feel free to send in a pull request.
+Ensure that all the unit tests are passing before sending in a pull request.
 
 ## Using the project
 
