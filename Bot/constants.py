@@ -23,7 +23,7 @@ CMD_CANCEL = 'cancel'
 LOGGER_FORMAT = '%(asctime)s %(clientip)-15s %(user)-8s %(message)s'
 
 # Interval to edit the message (Default 30 seconds)
-POLLING_INTERVAL = 30
+POLLING_INTERVAL: float = 30
 
 # Format for Display
 TIMER_FORMAT = "**{event_name}**\n⏳{time}\nThis updates every " + \
