@@ -37,8 +37,7 @@ HELP_MSG = f'''To use the bot just type {COMMAND_FORMAT} and the bot will start 
 Do {CANCEL_FORMAT} to cancel the event'''
 ERROR_MSG = 'This function is not implemented yet. Press back to go back.'
 ERROR_CMD_MSG = f'Invalid format, the message is the format: {COMMAND_FORMAT}'
-ERROR_CANCEL_MSG = f'Invalid format, the message is the format: {
-    CANCEL_FORMAT}'
+ERROR_CANCEL_MSG = f'Invalid format, the message is the format: {CANCEL_FORMAT}'
 
 
 # Menu format (Change this if you know what you are doing)
