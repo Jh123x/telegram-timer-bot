@@ -34,7 +34,8 @@ TIME_FORMAT = "{days} Days, {hours} Hours, {minutes} Minutes {seconds} Seconds l
 
 START_MSG = f'Welcome to the {BOT_NAME} bot, feel free to look around'
 CANCEL_MSG = "{event_name} is cancelled."
-HELP_MSG = f'To use the bot just type {COMMAND_FORMAT} and the bot will start to countdown to the given date and time.\nDo {CANCEL_FORMAT} to cancel the event'
+HELP_MSG = f'''To use the bot just type {COMMAND_FORMAT} and the bot will start to countdown to the given date and time.
+Do {CANCEL_FORMAT} to cancel the event'''
 ERROR_MSG = 'This function is not implemented yet. Press back to go back.'
 ERROR_CMD_MSG = f'Invalid format, the message is the format: {COMMAND_FORMAT}'
 ERROR_CANCEL_MSG = f'Invalid format, the message is the format: {CANCEL_FORMAT}'

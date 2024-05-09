@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 @app.on_message(filters.command(CMD_START))
-async def start(_, message:Message) -> None:
+async def start(_, message: Message) -> None:
     """The main method for the start message"""
     await message.reply(
         text=CALLBACK_DICT[CMD_START].get_msg(),
@@ -34,7 +34,7 @@ async def start(_, message:Message) -> None:
 
 
 @app.on_message(filters.command(CMD_CANCEL))
-async def cancel(_, message:Message) -> None:
+async def cancel(_, message: Message) -> None:
     """The main method for the cancel message"""
     try:
         _, event_name = message.text.split(' ', 1)
@@ -50,7 +50,7 @@ async def cancel(_, message:Message) -> None:
 
 
 @app.on_message(filters.command(CMD_TIMER))
-async def start_timer(_, message:Message) -> None:
+async def start_timer(_, message: Message) -> None:
     """The main method for the timer message"""
     try:
         # [command, date, time, event_name]
@@ -113,7 +113,7 @@ def get_time_string(time: datetime.timedelta) -> str:
 
 @app.on_callback_query()
 async def callback(_, query: CallbackQuery) -> None:
-    msgpack = CALLBACK_DICT.get(query.data, CALLBACK_DICT[CMD_DEFAULT])
+    msgpack = CALLBACK_DICT.get(str(query.data), CALLBACK_DICT[CMD_DEFAULT])
 
     # Get the message
     text = msgpack.get_msg()

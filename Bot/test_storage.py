@@ -8,11 +8,7 @@ class TestStorage(unittest.TestCase):
     def setUp(self) -> None:
         self.storage = Storage()
         return super().setUp()
-    
-    def tearDown(self) -> None:
-        self.storage = None
-        return super().tearDown()
-    
+
     def test_add_get_delete(self) -> None:
         """Test the add, get and delete methods"""
         tests: Dict[str, Tuple[int, str, str, datetime]] = {
@@ -24,10 +20,13 @@ class TestStorage(unittest.TestCase):
         for name, (chat_id, event_name, event_time, event_datetime) in tests.items():
             with self.subTest(name=name):
                 assert self.storage.get_events(chat_id, event_name) is None
-                assert self.storage.add_event(chat_id, event_name, event_time) == event_datetime
-                assert self.storage.get_events(chat_id, event_name) == event_datetime
+                assert self.storage.add_event(
+                    chat_id, event_name, event_time) == event_datetime
+                assert self.storage.get_events(
+                    chat_id, event_name) == event_datetime
                 assert self.storage.delete_event(chat_id, event_name) == True
                 assert self.storage.delete_event(chat_id, event_name) == False
+
 
 if __name__ == '__main__':
     unittest.main()
