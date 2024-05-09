@@ -18,7 +18,3 @@ class TestMsgPack(unittest.TestCase):
     def test_get_markup(self) -> None:
         """Test the get_markup method"""
         assert self.msg_pack.get_markup() == HELP
-
-
-if __name__ == '__main__':
-    unittest.main()

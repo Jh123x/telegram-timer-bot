@@ -1,6 +1,7 @@
 import unittest
 from typing import Dict, Tuple
 from datetime import datetime
+
 from bot.storage import Storage
 
 
@@ -26,7 +27,3 @@ class TestStorage(unittest.TestCase):
                     chat_id, event_name) == event_datetime
                 assert self.storage.delete_event(chat_id, event_name)
                 assert not self.storage.delete_event(chat_id, event_name)
-
-
-if __name__ == '__main__':
-    unittest.main()
