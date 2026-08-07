@@ -1,3 +1,2 @@
-python-telegram-bot
-APScheduler
+python-telegram-bot[job-queue]
 python-dotenv

@@ -63,7 +63,10 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         key = (message.chat_id, event_name)
         job = event_jobs.pop(key, None)
         if job:
-            job.schedule_removal()
+            try:
+                job.schedule_removal()
+            except Exception:
+                logger.exception("Failed to remove job for event %s", event_name)
         message_id = event_messages.pop(key, None)
         if message_id is not None:
             try:
@@ -75,7 +78,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 )
             except Exception:
                 logger.exception("Failed to edit cancelled message for event %s", event_name)
-    except ValueError:
+    except (AttributeError, ValueError):
         await message.reply_text(
             text=ERROR_CANCEL_MSG,
         )
@@ -89,11 +92,12 @@ async def start_timer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         _, date, time, event_name = message.text.split(' ', 3)
         deadline = storage.add_event(
             message.chat_id, event_name, f"{date} {time}")
-        logger.info(f"Event {event_name} added for {deadline}")
+        logger.info("Event %s added for %s", event_name, deadline)
 
         if deadline - datetime.datetime.now() < ZERO_TIME_DELTA:
             await message.reply_text(
                 text=build_event_message(EVENT_ENDED_FORMAT, event_name),
+                parse_mode=ParseMode.HTML,
             )
             return
 
@@ -104,15 +108,23 @@ async def start_timer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 chat_id=message.chat_id, text=text, parse_mode=ParseMode.HTML)
         except Exception:
             logger.exception("Failed to send countdown message for event %s", event_name)
+            storage.delete_event(message.chat_id, event_name)
             await message.reply_text(text=ERROR_CMD_MSG)
             return
 
         key = (message.chat_id, event_name)
+        # A pending timer with the same event name must be removed before
+        # registering the new one, otherwise the old deadline job would fire
+        # and end the new timer early.
+        old_job = event_jobs.pop(key, None)
+        if old_job:
+            old_job.schedule_removal()
+        event_messages.pop(key, None)
         event_messages[key] = msg.message_id
         event_jobs[key] = context.job_queue.run_once(
             end_countdown, when=deadline.astimezone(), data=key)
 
-    except (ValueError, TypeError):
+    except (AttributeError, ValueError, TypeError):
         await message.reply_text(text=ERROR_CMD_MSG)
 
 
@@ -170,9 +182,13 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 def main() -> None:
     """Start the bot."""
+    token = os.environ.get("BOT_TOKEN", "")
+    if not token:
+        raise SystemExit(
+            "BOT_TOKEN is not set. Create a .env file with BOT_TOKEN=...")
     application = (
         Application.builder()
-        .token(os.environ.get("BOT_TOKEN", ""))
+        .token(token)
         .build()
     )
     application.add_handler(CommandHandler(CMD_START, start))

@@ -17,6 +17,12 @@ class TestCountdown(unittest.TestCase):
             '<b>A &lt;B&gt; &amp; C</b>\n⏳ <tg-time unix="1" format="r">0</tg-time>',
         )
 
+    def test_build_countdown_text_escapes_quotes_and_zero_unix(self) -> None:
+        self.assertEqual(
+            build_countdown_text('A "Q" <B>', 0),
+            '<b>A &quot;Q&quot; &lt;B&gt;</b>\n⏳ <tg-time unix="0" format="r">0</tg-time>',
+        )
+
     def test_build_event_message_escapes_event_name(self) -> None:
         self.assertEqual(
             build_event_message(EVENT_ENDED_FORMAT, "A <B> & C"),
