@@ -1,0 +1,28 @@
+[project]
+name = "telegram-timer-bot"
+version = "0.1.0"
+requires-python = ">=3.13"
+
+[tool.ruff]
+target-version = "py313"
+
+[tool.ruff.lint]
+# Default pyflakes/pycodestyle error rules + isort (I) + pyupgrade (UP) +
+# flake8-async (ASYNC).
+#
+# DTZ (timezone-aware datetime) rules are intentionally NOT enabled: event
+# times come from user input as naive strings ("%d/%m/%Y %H:%M") with no
+# timezone, and are compared against naive local datetime.now(). Making them
+# tz-aware would change the bot's input format and break comparison semantics.
+select = [
+    "E4",
+    "E7",
+    "E9",
+    "F",
+    "I",
+    "UP",
+    "ASYNC",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

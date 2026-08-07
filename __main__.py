@@ -1,19 +1,32 @@
-import os
+import asyncio
 import datetime
 import logging
-from time import sleep
+import os
+
 from dotenv import load_dotenv
 from pyrogram import filters
 from pyrogram.client import Client
-from pyrogram.types import Message, CallbackQuery
+from pyrogram.types import CallbackQuery, Message
 
-from bot.storage import Storage
 from bot.constants import (
-    CALLBACK_DICT, ERROR_CMD_MSG, ZERO_TIME_DELTA, TIMER_FORMAT,
-    EVENT_ENDED_FORMAT, POLLING_INTERVAL, TIME_FORMAT, CANCEL_MSG,
-    ERROR_CANCEL_MSG, EVENT_CANCELLED_FORMAT, CMD_START, CMD_DEFAULT,
-    CMD_CANCEL, CMD_TIMER, BOT_NAME, LOGGER_FORMAT,
+    BOT_NAME,
+    CALLBACK_DICT,
+    CANCEL_MSG,
+    CMD_CANCEL,
+    CMD_DEFAULT,
+    CMD_START,
+    CMD_TIMER,
+    ERROR_CANCEL_MSG,
+    ERROR_CMD_MSG,
+    EVENT_CANCELLED_FORMAT,
+    EVENT_ENDED_FORMAT,
+    LOGGER_FORMAT,
+    POLLING_INTERVAL,
+    TIME_FORMAT,
+    TIMER_FORMAT,
+    ZERO_TIME_DELTA,
 )
+from bot.storage import Storage
 
 load_dotenv()
 storage = Storage()
@@ -83,7 +96,7 @@ async def start_timer(_, message: Message) -> None:
 async def refresh_msg(msg, deadline: datetime.datetime, event_name: str) -> None:
     """Updates the event message until it is pass the deadline"""
     while True:
-        sleep(POLLING_INTERVAL)
+        await asyncio.sleep(POLLING_INTERVAL)
         time_left = deadline - datetime.datetime.now()
         if storage.get_events(msg.chat.id, event_name) is None:
             format = EVENT_CANCELLED_FORMAT
