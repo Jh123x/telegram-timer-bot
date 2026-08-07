@@ -33,7 +33,7 @@ from bot.storage import Storage
 load_dotenv()
 storage = Storage()
 
-logging.basicConfig(format=LOGGER_FORMAT)
+logging.basicConfig(format=LOGGER_FORMAT, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # (chat_id, event_name) -> message_id of the live countdown message
