@@ -1,146 +1,193 @@
-import asyncio
 import datetime
 import logging
 import os
 
 from dotenv import load_dotenv
-from pyrogram import filters
-from pyrogram.client import Client
-from pyrogram.types import CallbackQuery, Message
+from telegram import Update
+from telegram.constants import ParseMode
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    ContextTypes,
+    Job,
+)
 
 from bot.constants import (
-    BOT_NAME,
-    CALLBACK_DICT,
     CANCEL_MSG,
     CMD_CANCEL,
-    CMD_DEFAULT,
+    CMD_HELP,
     CMD_START,
     CMD_TIMER,
     ERROR_CANCEL_MSG,
     ERROR_CMD_MSG,
     EVENT_CANCELLED_FORMAT,
     EVENT_ENDED_FORMAT,
+    HELP_MSG,
     LOGGER_FORMAT,
-    POLLING_INTERVAL,
-    TIME_FORMAT,
-    TIMER_FORMAT,
+    START_MSG,
     ZERO_TIME_DELTA,
 )
+from bot.countdown import build_countdown_text, build_event_message
 from bot.storage import Storage
 
 load_dotenv()
 storage = Storage()
 
-app = Client(
-    BOT_NAME,
-    api_id=os.environ.get('API_ID', ""),
-    api_hash=os.environ.get('API_HASH', ""),
-    bot_token=os.environ.get("BOT_TOKEN", ""),
-)
-
-logging.basicConfig(format=LOGGER_FORMAT)
+logging.basicConfig(format=LOGGER_FORMAT, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# (chat_id, event_name) -> message_id of the live countdown message
+event_messages: dict[tuple[int, str], int] = {}
+# (chat_id, event_name) -> scheduled Job that edits the message at the deadline
+event_jobs: dict[tuple[int, str], Job] = {}
 
-@app.on_message(filters.command(CMD_START))
-async def start(_, message: Message) -> None:
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """The main method for the start message"""
-    await message.reply(
-        text=CALLBACK_DICT[CMD_START].get_msg(),
-        reply_markup=CALLBACK_DICT[CMD_START].get_markup()
-    )
+    await update.message.reply_text(text=START_MSG)
 
 
-@app.on_message(filters.command(CMD_CANCEL))
-async def cancel(_, message: Message) -> None:
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """The main method for the help message"""
+    await update.message.reply_text(text=HELP_MSG, parse_mode=ParseMode.HTML)
+
+
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """The main method for the cancel message"""
+    message = update.message
     try:
         _, event_name = message.text.split(' ', 1)
-        if not storage.delete_event(message.chat.id, event_name):
+        if not storage.delete_event(message.chat_id, event_name):
             raise ValueError(ERROR_CANCEL_MSG)
-        await message.reply(
+        await message.reply_text(
             text=CANCEL_MSG.format(event_name=event_name),
         )
-    except ValueError:
-        await message.reply(
+        key = (message.chat_id, event_name)
+        job = event_jobs.pop(key, None)
+        if job:
+            try:
+                job.schedule_removal()
+            except Exception:
+                logger.exception("Failed to remove job for event %s", event_name)
+        message_id = event_messages.pop(key, None)
+        if message_id is not None:
+            try:
+                await context.bot.edit_message_text(
+                    chat_id=message.chat_id,
+                    message_id=message_id,
+                    text=build_event_message(EVENT_CANCELLED_FORMAT, event_name),
+                    parse_mode=ParseMode.HTML,
+                )
+            except Exception:
+                logger.exception("Failed to edit cancelled message for event %s", event_name)
+    except (AttributeError, ValueError):
+        await message.reply_text(
             text=ERROR_CANCEL_MSG,
+            parse_mode=ParseMode.HTML,
         )
 
 
-@app.on_message(filters.command(CMD_TIMER))
-async def start_timer(_, message: Message) -> None:
+async def start_timer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """The main method for the timer message"""
+    message = update.message
     try:
         # [command, date, time, event_name]
         _, date, time, event_name = message.text.split(' ', 3)
         deadline = storage.add_event(
-            message.chat.id, event_name, f"{date} {time}")
-        logger.info(f"Event {event_name} added for {deadline}")
+            message.chat_id, event_name, f"{date} {time}")
+        logger.info("Event %s added for %s", event_name, deadline)
 
-        time_left: datetime.timedelta = deadline - datetime.datetime.now()
-        if time_left < ZERO_TIME_DELTA:
-            await message.reply(
-                text=EVENT_ENDED_FORMAT.format(event_name=event_name),
+        if deadline - datetime.datetime.now() < ZERO_TIME_DELTA:
+            await message.reply_text(
+                text=build_event_message(EVENT_ENDED_FORMAT, event_name),
+                parse_mode=ParseMode.HTML,
             )
             return
 
-        event_string = get_event_string(time_left, event_name)
-        msg = await app.send_message(message.chat.id, event_string)
+        unix = int(deadline.timestamp())
+        text = build_countdown_text(event_name, unix)
+        try:
+            msg = await context.bot.send_message(
+                chat_id=message.chat_id, text=text, parse_mode=ParseMode.HTML)
+        except Exception:
+            logger.exception("Failed to send countdown message for event %s", event_name)
+            storage.delete_event(message.chat_id, event_name)
+            await message.reply_text(text=ERROR_CMD_MSG, parse_mode=ParseMode.HTML)
+            return
 
-        await refresh_msg(msg, deadline, event_name)
+        key = (message.chat_id, event_name)
+        # A pending timer with the same event name must be removed before
+        # registering the new one, otherwise the old deadline job would fire
+        # and end the new timer early.
+        old_job = event_jobs.pop(key, None)
+        if old_job:
+            try:
+                old_job.schedule_removal()
+            except Exception:
+                logger.exception("Failed to remove old job for event %s", event_name)
+        event_messages.pop(key, None)
+        event_messages[key] = msg.message_id
+        event_jobs[key] = context.job_queue.run_once(
+            end_countdown, when=deadline.astimezone(), data=key)
 
-    except (ValueError, TypeError):
-        await message.reply(text=ERROR_CMD_MSG)
-
-
-async def refresh_msg(msg, deadline: datetime.datetime, event_name: str) -> None:
-    """Updates the event message until it is pass the deadline"""
-    while True:
-        await asyncio.sleep(POLLING_INTERVAL)
-        time_left = deadline - datetime.datetime.now()
-        if storage.get_events(msg.chat.id, event_name) is None:
-            format = EVENT_CANCELLED_FORMAT
-            logger.info(f"Event {event_name} was cancelled")
-            break
-
-        if time_left.total_seconds() < 0:
-            format = EVENT_ENDED_FORMAT
-            logger.info(f"Event {event_name} has ended")
-            break
-
-        event_string = get_event_string(time_left, event_name)
-        await msg.edit(event_string)
-
-        logger.info(f"Event {event_name} updated for {time_left}")
-
-    await msg.edit(format.format(event_name=event_name))
+    except (AttributeError, ValueError, TypeError):
+        await message.reply_text(text=ERROR_CMD_MSG, parse_mode=ParseMode.HTML)
 
 
-def get_event_string(time: datetime.timedelta, event_name: str) -> str:
-    """Get the string format for event message"""
-    return TIMER_FORMAT.format(time=get_time_string(time), event_name=event_name)
+async def end_countdown(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Edits the countdown message to the ended message at the deadline."""
+    key = context.job.data
+    chat_id, event_name = key
+    if storage.get_events(chat_id, event_name) is None:
+        # Event was cancelled; the cancel handler already edited the message.
+        event_messages.pop(key, None)
+        event_jobs.pop(key, None)
+        return
+    storage.delete_event(chat_id, event_name)
+    message_id = event_messages.pop(key, None)
+    event_jobs.pop(key, None)
+    if message_id is None:
+        return
+    try:
+        await context.bot.edit_message_text(
+            chat_id=chat_id,
+            message_id=message_id,
+            text=build_event_message(EVENT_ENDED_FORMAT, event_name),
+            parse_mode=ParseMode.HTML,
+        )
+    except Exception:
+        logger.exception("Failed to edit countdown message for event %s", event_name)
 
 
-def get_time_string(time: datetime.timedelta) -> str:
-    """Returns the time in the format of TIME_FORMAT"""
-    hours = time.seconds // 3600
-    minutes = (time.seconds % 3600) // 60
-    seconds = time.seconds % 60
-    return TIME_FORMAT.format(days=time.days, hours=hours, minutes=minutes, seconds=seconds)
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Logs exceptions raised in handlers with the update context."""
+    logger.error(
+        "Exception while handling update %s: %s",
+        type(update).__name__ if update is not None else None,
+        context.error,
+        exc_info=context.error,
+    )
 
 
-@app.on_callback_query()
-async def callback(_, query: CallbackQuery) -> None:
-    msgpack = CALLBACK_DICT.get(str(query.data), CALLBACK_DICT[CMD_DEFAULT])
+def main() -> None:
+    """Start the bot."""
+    token = os.environ.get("BOT_TOKEN", "")
+    if not token:
+        raise SystemExit(
+            "BOT_TOKEN is not set. Create a .env file with BOT_TOKEN=...")
+    application = (
+        Application.builder()
+        .token(token)
+        .build()
+    )
+    application.add_handler(CommandHandler(CMD_START, start))
+    application.add_handler(CommandHandler(CMD_HELP, help_command))
+    application.add_handler(CommandHandler(CMD_CANCEL, cancel))
+    application.add_handler(CommandHandler(CMD_TIMER, start_timer))
+    application.add_error_handler(error_handler)
+    logger.info("Starting the bot")
+    application.run_polling()
 
-    # Get the message
-    text = msgpack.get_msg()
-    markup = msgpack.get_markup()
-
-    # Update the message
-    await query.edit_message_text(text, reply_markup=markup)
-    logger.info(f"Callback {query.data} is called")
 
 if __name__ == "__main__":
-    logger.info("Starting the bot")
-    app.run()
+    main()

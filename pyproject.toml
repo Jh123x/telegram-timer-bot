@@ -26,9 +26,3 @@ select = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# pyrogram 2.0.106 calls asyncio.get_event_loop() at import time on Python
-# 3.13+, which emits a DeprecationWarning. It is harmless (no running loop
-# during import) and unmaintained upstream, so scope it out here.
-filterwarnings = [
-    "ignore:There is no current event loop:DeprecationWarning:pyrogram.sync",
-]
