@@ -3,6 +3,7 @@ import datetime
 import logging
 import os
 
+import httpx
 from dotenv import load_dotenv
 from pyrogram import filters
 from pyrogram.client import Client
@@ -21,11 +22,9 @@ from bot.constants import (
     EVENT_CANCELLED_FORMAT,
     EVENT_ENDED_FORMAT,
     LOGGER_FORMAT,
-    POLLING_INTERVAL,
-    TIME_FORMAT,
-    TIMER_FORMAT,
     ZERO_TIME_DELTA,
 )
+from bot.countdown import build_countdown_text, build_event_message
 from bot.storage import Storage
 
 load_dotenv()
@@ -40,6 +39,48 @@ app = Client(
 
 logging.basicConfig(format=LOGGER_FORMAT)
 logger = logging.getLogger(__name__)
+
+_http_client: httpx.AsyncClient | None = None
+
+
+def _get_http_client() -> httpx.AsyncClient:
+    global _http_client
+    if _http_client is None:
+        _http_client = httpx.AsyncClient(timeout=10)
+    return _http_client
+
+
+async def api_send_message(chat_id: int, text: str) -> int:
+    """POST sendMessage to the Bot API with parse_mode=HTML; returns message_id."""
+    client = _get_http_client()
+    resp = await client.post(
+        f"https://api.telegram.org/bot{os.environ.get('BOT_TOKEN', '')}/sendMessage",
+        json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"},
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    if not data.get("ok"):
+        raise RuntimeError(data)
+    return data["result"]["message_id"]
+
+
+async def api_edit_message(chat_id: int, message_id: int, text: str) -> None:
+    """POST editMessageText to the Bot API with parse_mode=HTML."""
+    client = _get_http_client()
+    resp = await client.post(
+        f"https://api.telegram.org/bot{os.environ.get('BOT_TOKEN', '')}/editMessageText",
+        json={"chat_id": chat_id, "message_id": message_id, "text": text, "parse_mode": "HTML"},
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    if not data.get("ok"):
+        raise RuntimeError(data)
+
+
+# (chat_id, event_name) -> message_id of the live countdown message
+event_messages: dict[tuple[int, str], int] = {}
+# (chat_id, event_name) -> asyncio task that edits the message at the deadline
+event_tasks: dict[tuple[int, str], asyncio.Task] = {}
 
 
 @app.on_message(filters.command(CMD_START))
@@ -61,6 +102,21 @@ async def cancel(_, message: Message) -> None:
         await message.reply(
             text=CANCEL_MSG.format(event_name=event_name),
         )
+        key = (message.chat.id, event_name)
+        task = event_tasks.pop(key, None)
+        if task:
+            task.cancel()
+        message_id = event_messages.pop(key, None)
+        if message_id is not None:
+            try:
+                await api_edit_message(
+                    message.chat.id,
+                    message_id,
+                    build_event_message(EVENT_CANCELLED_FORMAT, event_name),
+                )
+            except Exception:
+                logger.exception(
+                    "Failed to edit cancelled message for event %s", event_name)
     except ValueError:
         await message.reply(
             text=ERROR_CANCEL_MSG,
@@ -77,56 +133,55 @@ async def start_timer(_, message: Message) -> None:
             message.chat.id, event_name, f"{date} {time}")
         logger.info(f"Event {event_name} added for {deadline}")
 
-        time_left: datetime.timedelta = deadline - datetime.datetime.now()
-        if time_left < ZERO_TIME_DELTA:
+        if deadline - datetime.datetime.now() < ZERO_TIME_DELTA:
             await message.reply(
-                text=EVENT_ENDED_FORMAT.format(event_name=event_name),
+                text=build_event_message(EVENT_ENDED_FORMAT, event_name),
             )
             return
 
-        event_string = get_event_string(time_left, event_name)
-        msg = await app.send_message(message.chat.id, event_string)
+        unix = int(deadline.timestamp())
+        text = build_countdown_text(event_name, unix)
+        try:
+            message_id = await api_send_message(message.chat.id, text)
+        except Exception:
+            logger.exception(
+                "Failed to send countdown message for event %s", event_name)
+            await message.reply(text=ERROR_CMD_MSG)
+            return
 
-        await refresh_msg(msg, deadline, event_name)
+        key = (message.chat.id, event_name)
+        event_messages[key] = message_id
+        event_tasks[key] = asyncio.create_task(
+            end_countdown(message.chat.id, event_name, deadline))
 
     except (ValueError, TypeError):
         await message.reply(text=ERROR_CMD_MSG)
 
 
-async def refresh_msg(msg, deadline: datetime.datetime, event_name: str) -> None:
-    """Updates the event message until it is pass the deadline"""
-    while True:
-        await asyncio.sleep(POLLING_INTERVAL)
-        time_left = deadline - datetime.datetime.now()
-        if storage.get_events(msg.chat.id, event_name) is None:
-            format = EVENT_CANCELLED_FORMAT
-            logger.info(f"Event {event_name} was cancelled")
-            break
-
-        if time_left.total_seconds() < 0:
-            format = EVENT_ENDED_FORMAT
-            logger.info(f"Event {event_name} has ended")
-            break
-
-        event_string = get_event_string(time_left, event_name)
-        await msg.edit(event_string)
-
-        logger.info(f"Event {event_name} updated for {time_left}")
-
-    await msg.edit(format.format(event_name=event_name))
-
-
-def get_event_string(time: datetime.timedelta, event_name: str) -> str:
-    """Get the string format for event message"""
-    return TIMER_FORMAT.format(time=get_time_string(time), event_name=event_name)
-
-
-def get_time_string(time: datetime.timedelta) -> str:
-    """Returns the time in the format of TIME_FORMAT"""
-    hours = time.seconds // 3600
-    minutes = (time.seconds % 3600) // 60
-    seconds = time.seconds % 60
-    return TIME_FORMAT.format(days=time.days, hours=hours, minutes=minutes, seconds=seconds)
+async def end_countdown(chat_id: int, event_name: str, deadline: datetime.datetime) -> None:
+    """Waits until the deadline, then edits the countdown message to the ended message."""
+    key = (chat_id, event_name)
+    delay = (deadline - datetime.datetime.now()).total_seconds()
+    if delay > 0:
+        await asyncio.sleep(delay)
+    if storage.get_events(chat_id, event_name) is None:
+        # Event was cancelled; the cancel handler already edited the message.
+        event_messages.pop(key, None)
+        event_tasks.pop(key, None)
+        return
+    storage.delete_event(chat_id, event_name)
+    message_id = event_messages.pop(key, None)
+    event_tasks.pop(key, None)
+    if message_id is None:
+        return
+    try:
+        await api_edit_message(
+            chat_id,
+            message_id,
+            build_event_message(EVENT_ENDED_FORMAT, event_name),
+        )
+    except Exception:
+        logger.exception("Failed to edit countdown message for event %s", event_name)
 
 
 @app.on_callback_query()
