@@ -18,12 +18,14 @@ from bot.constants import (
     CANCEL_MSG,
     CMD_CANCEL,
     CMD_DEFAULT,
+    CMD_HELP,
     CMD_START,
     CMD_TIMER,
     ERROR_CANCEL_MSG,
     ERROR_CMD_MSG,
     EVENT_CANCELLED_FORMAT,
     EVENT_ENDED_FORMAT,
+    HELP_MSG,
     LOGGER_FORMAT,
     ZERO_TIME_DELTA,
 )
@@ -48,6 +50,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         text=CALLBACK_DICT[CMD_START].get_msg(),
         reply_markup=CALLBACK_DICT[CMD_START].get_markup(),
     )
+
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """The main method for the help message"""
+    await update.message.reply_text(text=HELP_MSG)
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -166,8 +173,15 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         logger.exception("Failed to answer callback query %r", query.data)
     msgpack = CALLBACK_DICT.get(str(query.data), CALLBACK_DICT[CMD_DEFAULT])
     try:
-        await query.edit_message_text(
-            text=msgpack.get_msg(), reply_markup=msgpack.get_markup())
+        # Edit via context.bot with explicit ids rather than query helpers,
+        # so the edit does not depend on the callback's internal message
+        # binding.
+        await context.bot.edit_message_text(
+            chat_id=query.message.chat_id,
+            message_id=query.message.message_id,
+            text=msgpack.get_msg(),
+            reply_markup=msgpack.get_markup(),
+        )
     except Exception:
         logger.exception("Failed to edit message for callback %r", query.data)
     logger.info("Callback %r is called", query.data)
@@ -195,6 +209,7 @@ def main() -> None:
         .build()
     )
     application.add_handler(CommandHandler(CMD_START, start))
+    application.add_handler(CommandHandler(CMD_HELP, help_command))
     application.add_handler(CommandHandler(CMD_CANCEL, cancel))
     application.add_handler(CommandHandler(CMD_TIMER, start_timer))
     application.add_handler(CallbackQueryHandler(callback))
