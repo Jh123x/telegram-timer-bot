@@ -143,9 +143,15 @@ async def end_countdown(context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
+    # Answer first: the Telegram client shows a loading spinner on the button
+    # until the callback query is answered.
+    await query.answer()
     msgpack = CALLBACK_DICT.get(str(query.data), CALLBACK_DICT[CMD_DEFAULT])
-    await query.edit_message_text(
-        text=msgpack.get_msg(), reply_markup=msgpack.get_markup())
+    try:
+        await query.edit_message_text(
+            text=msgpack.get_msg(), reply_markup=msgpack.get_markup())
+    except Exception:
+        logger.exception("Failed to edit message for callback %s", query.data)
     logger.info("Callback %s is called", query.data)
 
 
