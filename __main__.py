@@ -145,14 +145,27 @@ async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     # Answer first: the Telegram client shows a loading spinner on the button
     # until the callback query is answered.
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        logger.exception("Failed to answer callback query %r", query.data)
     msgpack = CALLBACK_DICT.get(str(query.data), CALLBACK_DICT[CMD_DEFAULT])
     try:
         await query.edit_message_text(
             text=msgpack.get_msg(), reply_markup=msgpack.get_markup())
     except Exception:
-        logger.exception("Failed to edit message for callback %s", query.data)
-    logger.info("Callback %s is called", query.data)
+        logger.exception("Failed to edit message for callback %r", query.data)
+    logger.info("Callback %r is called", query.data)
+
+
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Logs exceptions raised in handlers with the update context."""
+    logger.error(
+        "Exception while handling update %s: %s",
+        type(update).__name__ if update is not None else None,
+        context.error,
+        exc_info=context.error,
+    )
 
 
 def main() -> None:
@@ -166,6 +179,7 @@ def main() -> None:
     application.add_handler(CommandHandler(CMD_CANCEL, cancel))
     application.add_handler(CommandHandler(CMD_TIMER, start_timer))
     application.add_handler(CallbackQueryHandler(callback))
+    application.add_error_handler(error_handler)
     logger.info("Starting the bot")
     application.run_polling()
 
