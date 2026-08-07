@@ -118,7 +118,10 @@ async def start_timer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         # and end the new timer early.
         old_job = event_jobs.pop(key, None)
         if old_job:
-            old_job.schedule_removal()
+            try:
+                old_job.schedule_removal()
+            except Exception:
+                logger.exception("Failed to remove old job for event %s", event_name)
         event_messages.pop(key, None)
         event_messages[key] = msg.message_id
         event_jobs[key] = context.job_queue.run_once(
