@@ -19,15 +19,11 @@ This is a telegram bot that allows the user to have a "live" countdown on the ev
 ## Creating your `.env` file
 
 ```env
-API_ID=<Your API ID>
-API_HASH=<Your API Hash>
 BOT_TOKEN=<Your Bot Token>
 ```
 
-1. Copy the template above (Note that there is no space between the `=` and the id itself)
-2. Get your `API_ID` and `API_HASH` [here](https://my.telegram.org/apps/create)
-   - Replace the `API_ID` and `API_HASH` (including the `<` and `>`) with the ones you got from the link above
-3. Get your `BOT_TOKEN` from `@botfather` [here](https://core.telegram.org/bots)
+1. Copy the template above (Note that there is no space between the `=` and the token itself)
+2. Get your `BOT_TOKEN` from `@botfather` [here](https://core.telegram.org/bots)
 
 ## Note:
 
@@ -48,4 +44,4 @@ Referenced from [Jh123x Timer bot](https://jh123x.com/blog/2023/a-live-countdown
 
 ## Tech Stack
 
-- [pyrogram](https://docs.pyrogram.org/)
+- [python-telegram-bot](https://python-telegram-bot.org/)
