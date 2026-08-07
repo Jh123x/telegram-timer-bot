@@ -21,13 +21,11 @@ This is a telegram bot that allows the user to have a "live" countdown on the ev
 The `requirements.txt` file lists the packages the bot needs:
 
 ```txt
-python-telegram-bot
-APScheduler
+python-telegram-bot[job-queue]
 python-dotenv
 ```
 
-- `python-telegram-bot` — the Telegram Bot API library
-- `APScheduler` — schedules the countdown end message
+- `python-telegram-bot` — the Telegram Bot API library (the `[job-queue]` extra pulls in APScheduler for scheduling the countdown end message)
 - `python-dotenv` — loads the `.env` file
 
 Install them with:
