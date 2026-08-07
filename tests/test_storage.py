@@ -1,5 +1,4 @@
 import unittest
-from typing import Dict, Tuple
 from datetime import datetime
 
 from bot.storage import Storage
@@ -12,7 +11,7 @@ class TestStorage(unittest.TestCase):
 
     def test_add_get_delete(self) -> None:
         """Test the add, get and delete methods"""
-        tests: Dict[str, Tuple[int, str, str, datetime]] = {
+        tests: dict[str, tuple[int, str, str, datetime]] = {
             'test1': (1, 'event1', '01/01/2021 00:00', datetime(2021, 1, 1, 0, 0)),
             'test2': (2, 'event2', '02/02/2022 02:02', datetime(2022, 2, 2, 2, 2)),
             'test3': (3, 'event3', '03/03/2033 03:03', datetime(2033, 3, 3, 3, 3)),

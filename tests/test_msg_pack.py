@@ -1,7 +1,7 @@
 import unittest
 
-from bot.msg_pack import MsgPack
 from bot.constants import HELP
+from bot.msg_pack import MsgPack
 
 
 class TestMsgPack(unittest.TestCase):
@@ -14,7 +14,7 @@ class TestMsgPack(unittest.TestCase):
 
     def test_get_msg(self) -> None:
         """Test the get_msg method"""
-        assert self.msg_pack.get_msg() == str('Hello')
+        assert self.msg_pack.get_msg() == 'Hello'
 
     def test_get_markup(self) -> None:
         """Test the get_markup method"""

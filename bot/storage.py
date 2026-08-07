@@ -1,12 +1,11 @@
 import datetime
-from typing import Optional, Dict
 
 
 class Storage:
     def __init__(self: 'Storage') -> None:
         """Stores the information for each user"""
         # Load the shelve db if possible
-        self.storage: Dict[int, Dict[str, datetime.datetime]] = {}
+        self.storage: dict[int, dict[str, datetime.datetime]] = {}
 
     def add_event(self: 'Storage', chat_id: int, event_name: str, event_time: str) -> datetime.datetime:
         """
@@ -23,7 +22,7 @@ class Storage:
 
         return deadline
 
-    def get_events(self: 'Storage', chat_id: int, event_name: str) -> Optional[datetime.datetime]:
+    def get_events(self: 'Storage', chat_id: int, event_name: str) -> datetime.datetime | None:
         """Returns the event time if it exists, None otherwise"""
         return self.storage.get(chat_id, {}).get(event_name, None)
 

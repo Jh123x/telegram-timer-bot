@@ -1,10 +1,9 @@
 # Do not change those within this
 import datetime
-from typing import Dict
+
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot.msg_pack import MsgPack
-
 
 ZERO_TIME_DELTA = datetime.timedelta(0)
 BOT_NAME = "TimerBot"
@@ -70,7 +69,7 @@ ERROR = InlineKeyboardMarkup(
     ]
 )
 
-CALLBACK_DICT: Dict[str, MsgPack] = {
+CALLBACK_DICT: dict[str, MsgPack] = {
     CMD_START: MsgPack(START_MSG, START),
     CMD_HELP: MsgPack(HELP_MSG, HELP),
     CMD_DEFAULT: MsgPack(ERROR_MSG, ERROR),
