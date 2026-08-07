@@ -1,7 +1,7 @@
 # Do not change those within this
 import datetime
 
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot.msg_pack import MsgPack
 

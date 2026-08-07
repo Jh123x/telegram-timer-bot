@@ -1,4 +1,4 @@
-from pyrogram.types import InlineKeyboardMarkup
+from telegram import InlineKeyboardMarkup
 
 
 class MsgPack:
