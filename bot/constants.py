@@ -19,7 +19,7 @@ CMD_TIMER = 'timer'
 CMD_CANCEL = 'cancel'
 
 # Logger Format
-LOGGER_FORMAT = '%(asctime)s %(clientip)-15s %(user)-8s %(message)s'
+LOGGER_FORMAT = '%(asctime)s %(levelname)s %(message)s'
 
 # Format for Display
 TIMER_FORMAT = '<b>{event_name}</b>\n⏳ <tg-time unix="{unix}" format="r">0</tg-time>'
