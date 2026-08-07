@@ -7,17 +7,14 @@ from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import (
     Application,
-    CallbackQueryHandler,
     CommandHandler,
     ContextTypes,
     Job,
 )
 
 from bot.constants import (
-    CALLBACK_DICT,
     CANCEL_MSG,
     CMD_CANCEL,
-    CMD_DEFAULT,
     CMD_HELP,
     CMD_START,
     CMD_TIMER,
@@ -27,6 +24,7 @@ from bot.constants import (
     EVENT_ENDED_FORMAT,
     HELP_MSG,
     LOGGER_FORMAT,
+    START_MSG,
     ZERO_TIME_DELTA,
 )
 from bot.countdown import build_countdown_text, build_event_message
@@ -46,15 +44,12 @@ event_jobs: dict[tuple[int, str], Job] = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """The main method for the start message"""
-    await update.message.reply_text(
-        text=CALLBACK_DICT[CMD_START].get_msg(),
-        reply_markup=CALLBACK_DICT[CMD_START].get_markup(),
-    )
+    await update.message.reply_text(text=START_MSG)
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """The main method for the help message"""
-    await update.message.reply_text(text=HELP_MSG)
+    await update.message.reply_text(text=HELP_MSG, parse_mode=ParseMode.HTML)
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -88,6 +83,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     except (AttributeError, ValueError):
         await message.reply_text(
             text=ERROR_CANCEL_MSG,
+            parse_mode=ParseMode.HTML,
         )
 
 
@@ -116,7 +112,7 @@ async def start_timer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         except Exception:
             logger.exception("Failed to send countdown message for event %s", event_name)
             storage.delete_event(message.chat_id, event_name)
-            await message.reply_text(text=ERROR_CMD_MSG)
+            await message.reply_text(text=ERROR_CMD_MSG, parse_mode=ParseMode.HTML)
             return
 
         key = (message.chat_id, event_name)
@@ -135,7 +131,7 @@ async def start_timer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             end_countdown, when=deadline.astimezone(), data=key)
 
     except (AttributeError, ValueError, TypeError):
-        await message.reply_text(text=ERROR_CMD_MSG)
+        await message.reply_text(text=ERROR_CMD_MSG, parse_mode=ParseMode.HTML)
 
 
 async def end_countdown(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -163,30 +159,6 @@ async def end_countdown(context: ContextTypes.DEFAULT_TYPE) -> None:
         logger.exception("Failed to edit countdown message for event %s", event_name)
 
 
-async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    query = update.callback_query
-    # Answer first: the Telegram client shows a loading spinner on the button
-    # until the callback query is answered.
-    try:
-        await query.answer()
-    except Exception:
-        logger.exception("Failed to answer callback query %r", query.data)
-    msgpack = CALLBACK_DICT.get(str(query.data), CALLBACK_DICT[CMD_DEFAULT])
-    try:
-        # Edit via context.bot with explicit ids rather than query helpers,
-        # so the edit does not depend on the callback's internal message
-        # binding.
-        await context.bot.edit_message_text(
-            chat_id=query.message.chat_id,
-            message_id=query.message.message_id,
-            text=msgpack.get_msg(),
-            reply_markup=msgpack.get_markup(),
-        )
-    except Exception:
-        logger.exception("Failed to edit message for callback %r", query.data)
-    logger.info("Callback %r is called", query.data)
-
-
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Logs exceptions raised in handlers with the update context."""
     logger.error(
@@ -212,7 +184,6 @@ def main() -> None:
     application.add_handler(CommandHandler(CMD_HELP, help_command))
     application.add_handler(CommandHandler(CMD_CANCEL, cancel))
     application.add_handler(CommandHandler(CMD_TIMER, start_timer))
-    application.add_handler(CallbackQueryHandler(callback))
     application.add_error_handler(error_handler)
     logger.info("Starting the bot")
     application.run_polling()
